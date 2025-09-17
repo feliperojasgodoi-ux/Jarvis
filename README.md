@@ -1,1 +1,0 @@
-O projeto em questão foi desenvolvido para ser um assessor pessoal de finanças, compromissos e afins

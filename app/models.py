@@ -4,13 +4,9 @@ from typing import Optional
 from datetime import date
 
 
-
-
 class TipoTransacao(str, Enum):
     RECEITA = "RECEITA"
     DESPESA = "DESPESA"
-
-
 
 
 @dataclass

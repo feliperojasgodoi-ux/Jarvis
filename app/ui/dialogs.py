@@ -1,6 +1,10 @@
 from PyQt5.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QComboBox,
-    QDialogButtonBox, QDateEdit
+    QDialog,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QDialogButtonBox,
+    QDateEdit,
 )
 from PyQt5.QtCore import QDate
 from PyQt5.QtGui import QDoubleValidator
@@ -64,5 +68,5 @@ class TransacaoDialog(QDialog):
             categoria=self.categoria.text().strip(),
             descricao=self.descricao.text().strip(),
             valor=valor,
-            data=date(d.year(), d.month(), d.day())
+            data=date(d.year(), d.month(), d.day()),
         )
