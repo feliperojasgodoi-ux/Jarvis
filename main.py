@@ -3,17 +3,24 @@ import sys
 from app.ui.main_window import MainWindow
 from app.db import Database
 from app.repository import TransacaoRepository
-
+from app.ui.start_window import StartWindow
 
 def main():
     app = QApplication(sys.argv)
+    dark_style = """
+    QMainWindow {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    """
 
     # Inicializa DB e repo
     db = Database(db_path="finance.db")
     repo = TransacaoRepository(db)
+    app.setStyleSheet(dark_style)
 
     # Janela principal
-    window = MainWindow(repo)
+    window = StartWindow(repo)
     window.show()
 
     sys.exit(app.exec_())

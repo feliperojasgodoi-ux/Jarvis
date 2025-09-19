@@ -27,8 +27,17 @@ class MainWindow(QMainWindow):
         root = QWidget()
         self.setCentralWidget(root)
         layout = QVBoxLayout(root)
-
-        # Toolbar
+        upper_style = """
+        QPushButton {
+            background: #1e1f22;
+            color: #eaeaea;
+            border-radius: 6px;
+            padding: 6px 12px;
+            border: 2px solid #2b2d31;
+            }
+        QLabel {
+                color:
+       """       # Toolbar
         tb = QHBoxLayout()
         self.btn_add = QPushButton("Adicionar")
         self.btn_del = QPushButton("Remover Selecionada")
@@ -42,10 +51,27 @@ class MainWindow(QMainWindow):
         layout.addLayout(tb)
 
         # Tabela
+        dark_style = """
+        QTableWidget {
+            background-color: #1e1f22;
+            color: #eaeaea;
+            gridline-color: #2b2d31;
+            text-align: center;
+        }
+        QHeaderView::section {
+            background-color: #2b2d31;
+            color: #eaeaea;
+            padding: 4px;
+            border: 1px solid #3a3c41;
+            font-weith: bold;
+        }
+        """
         self.table = QTableWidget(0, 5)
+        self.table.setStyleSheet(dark_style)
         self.table.setHorizontalHeaderLabels(
-            ["Tipo", "Categoria", "Descrição", "Valor (R$)", "Data"]
+            [ "Data","Tipo", "Categoria", "Valor (R$)", "Descrição"]
         )
+        self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(self.table.SelectRows)
         self.table.setEditTriggers(self.table.NoEditTriggers)
@@ -67,15 +93,19 @@ class MainWindow(QMainWindow):
         transacoes = self.repo.listar()
         self.table.setRowCount(0)
         total = 0.0
+
         for t in transacoes:
             r = self.table.rowCount()
             self.table.insertRow(r)
-            self.table.setItem(r, 0, QTableWidgetItem(str(t.id)))
+            item_data = QTableWidgetItem(t.data.strftime("%d/%m/%Y"))
+            item_data.setData(Qt.UserRole, t.id)  # <— ID guardado aqui
+            self.table.setItem(r, 0, item_data)
             self.table.setItem(r, 1, QTableWidgetItem(t.tipo.value))
             self.table.setItem(r, 2, QTableWidgetItem(t.categoria))
-            self.table.setItem(r, 3, QTableWidgetItem(t.descricao))
-            self.table.setItem(r, 4, QTableWidgetItem(f"{t.valor:,.2f}"))
+            self.table.setItem(r, 3, QTableWidgetItem(f"{t.valor:,.2f}"))
+            self.table.setItem(r, 4, QTableWidgetItem(t.descricao))
             total += t.valor if t.tipo == TipoTransacao.RECEITA else -t.valor
+            
 
         self.lbl_saldo.setText(f"Saldo: R$ {total:,.2f}")
 
@@ -107,6 +137,6 @@ class MainWindow(QMainWindow):
             )
             return
 
-        transacao_id = int(self.table.item(rows[0], 0).text())
+        transacao_id = int(self.table.item(rows[0], 0).data(Qt.UserRole))
         self.repo.remover(transacao_id)
         self._recarregar()
