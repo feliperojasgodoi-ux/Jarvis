@@ -10,7 +10,8 @@ tipo TEXT NOT NULL CHECK(tipo IN ('RECEITA','DESPESA')),
 categoria TEXT NOT NULL,
 descricao TEXT NOT NULL,
 valor REAL NOT NULL,
-data TEXT NOT NULL
+data TEXT NOT NULL,
+banco TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_transacoes_data ON transacoes(data);
 """

@@ -5,10 +5,11 @@ from app.db import Database
 from app.repository import TransacaoRepository
 from app.ui.start_window import StartWindow
 
+
 def main():
     app = QApplication(sys.argv)
     dark_style = """
-    QMainWindow {
+    QWidget {
         background-color: #121212;
         color: #e0e0e0;
     }
@@ -21,7 +22,7 @@ def main():
 
     # Janela principal
     window = StartWindow(repo)
-    window.show()
+    window.showMaximized()
 
     sys.exit(app.exec_())
 

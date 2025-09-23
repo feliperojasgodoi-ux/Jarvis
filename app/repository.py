@@ -11,12 +11,12 @@ class TransacaoRepository:
     # CRUD básico
     def adicionar(self, t: Transacao) -> int:
         sql = (
-            "INSERT INTO transacoes(tipo, categoria, descricao, valor, data)\n"
-            "VALUES (?,?,?,?,?)"
+            "INSERT INTO transacoes(tipo, categoria, descricao, valor, data, banco)\n"
+            "VALUES (?,?,?,?,?,?)"
         )
         return self.db.execute(
             sql,
-            (t.tipo.value, t.categoria, t.descricao, t.valor, t.data.isoformat()),
+            (t.tipo.value, t.categoria, t.descricao, t.valor, t.data.isoformat(), t.banco),
         )
 
     def listar(self) -> List[Transacao]:
@@ -61,4 +61,5 @@ class TransacaoRepository:
             descricao=r["descricao"],
             valor=float(r["valor"]),
             data=date.fromisoformat(r["data"]),
+            banco=r["banco"],  # corrigido: usar 'bank' (nome da coluna no schema)
         )

@@ -17,3 +17,4 @@ class Transacao:
     descricao: str
     valor: float
     data: date
+    banco: str

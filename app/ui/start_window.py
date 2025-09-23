@@ -39,6 +39,7 @@ class StartWindow(QMainWindow):
         self.repo = repo
         self.setWindowTitle("Início")
         self.resize(900, 600)
+        self.showMaximized()
 
         root = QWidget(); self.setCentralWidget(root)
         grid = QGridLayout(root)
@@ -87,7 +88,7 @@ class StartWindow(QMainWindow):
     def _abrir_financas(self):
         if self._fin_win is None:
             self._fin_win = MainWindow(self.repo)
-        self._fin_win.show()
+        self._fin_win.showMaximized()
         self._fin_win.raise_()
         self._fin_win.activateWindow()
 

@@ -28,6 +28,9 @@ class TransacaoDialog(QDialog):
         self.descricao = QLineEdit()
         self.descricao.setPlaceholderText("Ex.: Almoço no trabalho")
 
+        self.banco = QLineEdit()
+        self.banco.setPlaceholderText("Ex.: Banco do Brasil")
+
         self.valor = QLineEdit()
         self.valor.setPlaceholderText("Ex.: 45.90")
         # Validador numérico simples (2 casas)
@@ -41,6 +44,7 @@ class TransacaoDialog(QDialog):
         layout.addRow("Tipo:", self.tipo)
         layout.addRow("Categoria:", self.categoria)
         layout.addRow("Descrição:", self.descricao)
+        layout.addRow("Banco:", self.banco)
         layout.addRow("Valor:", self.valor)
         layout.addRow("Data:", self.data)
 
@@ -69,4 +73,5 @@ class TransacaoDialog(QDialog):
             descricao=self.descricao.text().strip(),
             valor=valor,
             data=date(d.year(), d.month(), d.day()),
+            banco=self.banco.text().strip(),
         )
