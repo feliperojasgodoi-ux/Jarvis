@@ -121,7 +121,6 @@ class MainWindow(QMainWindow):
                 t = dlg.get_transacao()
                 self.repo.adicionar(t)
                 self._recarregar()
-                self._recarregar()
             except ValueError:
                 QMessageBox.warning(
                     self, "Entrada Inválida", "Verifique os dados informados."
