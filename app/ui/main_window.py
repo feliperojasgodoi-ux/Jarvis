@@ -221,7 +221,6 @@ class MainWindow(QMainWindow):
         transacoes = self.repo.listar()
         self.table.setRowCount(0)
         total = 0.0
-
         for t in transacoes:
             r = self.table.rowCount()
             self.table.insertRow(r)
