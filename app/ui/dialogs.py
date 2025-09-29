@@ -9,8 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QDate
 from PyQt5.QtGui import QDoubleValidator
 from datetime import date
-from ..models import Transacao, TipoTransacao
-
+from ..models import Transacao, TipoTransacao, Categorias
 
 class TransacaoDialog(QDialog):
     def __init__(self, parent=None):
@@ -22,8 +21,12 @@ class TransacaoDialog(QDialog):
         self.tipo = QComboBox()
         self.tipo.addItems([t.value for t in TipoTransacao])
 
-        self.categoria = QLineEdit()
-        self.categoria.setPlaceholderText("Ex.: Alimentação")
+        # Categoria como seleção
+        self.categoria = QComboBox()
+        self.categoria.setEditable(True)              # permite digitar se precisar
+        self.categoria.addItems(Categorias.Categorias_PADRAO)
+        self.categoria.setInsertPolicy(QComboBox.NoInsert)  # não cria item novo ao Enter
+        self.categoria.setCurrentText("Alimentação")  # default simpático
 
         self.descricao = QLineEdit()
         self.descricao.setPlaceholderText("Ex.: Almoço no trabalho")
@@ -55,7 +58,7 @@ class TransacaoDialog(QDialog):
 
     # >>> ESTE MÉTODO PRECISA ESTAR DENTRO DA CLASSE <<<
     def get_transacao(self) -> Transacao:
-        if not self.categoria.text().strip():
+        if not self.categoria.currentText().strip():
             raise ValueError("Categoria vazia.")
         if not self.descricao.text().strip():
             raise ValueError("Descrição vazia.")
@@ -69,7 +72,7 @@ class TransacaoDialog(QDialog):
         return Transacao(
             id=None,
             tipo=TipoTransacao(self.tipo.currentText()),
-            categoria=self.categoria.text().strip(),
+            categoria=self.categoria.currentText().strip(),
             descricao=self.descricao.text().strip(),
             valor=valor,
             data=date(d.year(), d.month(), d.day()),

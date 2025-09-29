@@ -12,15 +12,22 @@ from PyQt5.QtWidgets import (
     QFrame,
     QSplitter,
     QStyledItemDelegate,
-    QSizePolicy
+    QSizePolicy,
+    QComboBox,
+    QDateEdit,
+    QTableView,
 
 )
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSettings
+from PyQt5.QtCore import Qt, QSettings, QDate
 from ..repository import TransacaoRepository
-from ..models import TipoTransacao
+from ..models import TipoTransacao, Categorias
 from .dialogs import TransacaoDialog
-from ..charts import PieChartWidget, CategoryBarChartWidget
+from ..charts import DonutChartWidget, CategoryBarChartWidget
+from matplotlib import cm
+from datetime import date, timedelta
+from typing import Optional
+from .calendar_style import beautify_calendar, TodayRingDelegate
 # from ..charts import BarChartWidget  # se precisar do gráfico de barras mensal
 
 class AlignDelegate(QStyledItemDelegate):
@@ -34,17 +41,67 @@ class MainWindow(QMainWindow):
         self.repo = repo
         self.setWindowTitle("Gerenciador Financeiro")
         self.resize(900, 600)
+        # Paleta e dicionário de cores por categoria
+        self._palette = list(cm.get_cmap("tab20").colors)  # 20 cores harmonizadas
+        self._color_idx = 0
+        self._cat_colors = {}  # {"Categoria": (r,g,b)}
+
 
         # Root widget
         root = QWidget()
         self.setCentralWidget(root)
+        root.setStyleSheet("""
+        QWidget {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+        }
+        """)
         layout = QVBoxLayout(root)
         
         # Toolbar
         tb = QHBoxLayout()
         self.btn_add = QPushButton("Adicionar")
         self.btn_del = QPushButton("Remover Selecionada")
-        # ===== Estilo dark para botões e label de saldo =====
+        self.combo_periodo = QComboBox()
+        self.combo_periodo.addItems([
+            "Mês",
+            "Sempre",
+            "Últimos 12 meses"
+        ])
+        
+        self.mes_ref = QDateEdit(QDate.currentDate())
+        self.mes_ref.setDisplayFormat("MM/yyyy")
+        self.mes_ref.setCalendarPopup(True)
+        # tornar "Mês" seleção padrão e mostrar o seletor já ao iniciar
+        cal = self.mes_ref.calendarWidget()
+        beautify_calendar(cal)
+        table_view = cal.findChild(QTableView)
+        table_view.setItemDelegate(TodayRingDelegate(table_view))
+        self.mes_ref.setVisible(True)
+        self.combo_periodo.setCurrentIndex(0)
+
+        # não chamar o handler ainda — a UI (tabela) será construída abaixo
+
+        tb.insertWidget(0, QLabel("Período: "))
+        tb.insertWidget(1, self.combo_periodo)
+        tb.insertWidget(2, self.mes_ref)
+
+
+        self.combo_periodo.currentIndexChanged.connect(self._on_periodo_changed)
+        self.mes_ref.dateChanged.connect(self._aplicar_filtro)
+        self._inicio: Optional[date] = None
+        self._fim: Optional[date] = None
+
+        self.combo_cat = QComboBox()
+        self.combo_cat.addItem("Todas as categorias")
+        self.combo_cat.addItems(Categorias.Categorias_PADRAO)
+        self.combo_cat.currentIndexChanged.connect(self._aplicar_filtro)
+
+        tb.insertWidget(3, QLabel("Categoria: "))
+        tb.insertWidget(4, self.combo_cat)
+
+                # ===== Estilo dark para botões e label de saldo =====
         btn_qss = """
         QPushButton {
             background: #2b2d31;         /* fundo escuro */
@@ -52,6 +109,7 @@ class MainWindow(QMainWindow):
             border: 1px solid #3a3d42;
             border-radius: 8px;
             padding: 6px 12px;
+            font-family: Segue UI, sans-serif;
             font-weight: 600;
         }
         QPushButton:hover { border-color: #3a86ff; }
@@ -63,12 +121,13 @@ class MainWindow(QMainWindow):
         self.lbl_saldo = QLabel("Saldo: R$ 0,00")
         self.lbl_saldo.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         # Saldo mais visível no tema escuro
-        self.lbl_saldo.setStyleSheet("color: #eaeaea; font-weight: 700;")
+        self.lbl_saldo.setStyleSheet("color: #eaeaea; font-weight: 700;font: Segoe UI, sans-serif;")
 
         tb.addWidget(self.btn_add)
         tb.addWidget(self.btn_del)
         tb.addStretch()
         tb.addWidget(self.lbl_saldo)
+
         layout.addLayout(tb)
 
         # Tabela
@@ -86,6 +145,7 @@ class MainWindow(QMainWindow):
         self.table.setItemDelegate(AlignDelegate(self.table))  # centraliza todo o conteúdo
         self.settings = QSettings("Felipe", "JarvisFinance")
         state = self.settings.value("table/header_state") 
+        
         if state is not None:
             self.table.horizontalHeader().restoreState(state)
         header = self.table.horizontalHeader()
@@ -108,6 +168,7 @@ class MainWindow(QMainWindow):
             border: 1px solid #2b2d31;
             border-radius: 14px;
             gridline-color: #2b2d31;
+            font-family: Segoe UI, sans-serif;
 
             /* Alternância de linhas no tema dark */
             alternate-background-color: #24272c;  /* ímpares */
@@ -125,6 +186,7 @@ class MainWindow(QMainWindow):
             padding: 8px 10px;
             border: none;
             border-right: 1px solid #3a3d42;
+            font: Segoe UI, sans-serif;
         }
         QHeaderView::section:first { 
             border-top-left-radius: 14px; 
@@ -152,7 +214,7 @@ class MainWindow(QMainWindow):
         
 
         # Área de gráficos
-        self.chart_pie = PieChartWidget([])
+        self.chart_pie = DonutChartWidget([])
         self.chart_bars  = CategoryBarChartWidget([], [], title="")
 
 
@@ -173,7 +235,7 @@ class MainWindow(QMainWindow):
         font.setBold(True)
         self.charts_title.setFont(font)
         self.charts_title.setAlignment(Qt.AlignCenter)
-        self.charts_title.setStyleSheet("color: #eaeaea; padding: 8px;")
+        self.charts_title.setStyleSheet("color: #eaeaea; padding: 8px; font: Segoe UI, sans-serif;")
 
         charts_block = QWidget()
         block_layout = QVBoxLayout(charts_block)
@@ -211,16 +273,32 @@ class MainWindow(QMainWindow):
         self.btn_del.clicked.connect(self._remover)
 
         # Inicializa
-        self._recarregar()
+        # agora que toda a UI foi criada, aplica o período inicial (isto chama _recarregar internamente)
+        self._on_periodo_changed(self.combo_periodo.currentIndex())
 
     def set_charts_title(self, title: str):
         self.charts_title.setText(title)
 
     def _recarregar(self):
-        # Tabela
-        transacoes = self.repo.listar()
+
+        cat = None
+        if hasattr(self, "combo_cat") and self.combo_cat.currentIndex() > 0:
+            cat = self.combo_cat.currentText().strip()
+
+        # tabela (com período e categoria)
+        if (self._inicio is not None) and (self._fim is not None):
+            transacoes = self.repo.listar_filtrado(self._inicio, self._fim, cat)
+        else:
+            transacoes = self.repo.listar_filtrado(None, None, cat)
+
+        if (self._inicio is not None) and (self._fim is not None):
+            dados = self.repo.soma_por_categoria_periodo(TipoTransacao.DESPESA, self._inicio, self._fim)
+        else:
+            dados = self.repo.soma_por_categoria(TipoTransacao.DESPESA)
+
         self.table.setRowCount(0)
         total = 0.0
+        
         for t in transacoes:
             r = self.table.rowCount()
             self.table.insertRow(r)
@@ -237,17 +315,20 @@ class MainWindow(QMainWindow):
 
         self.lbl_saldo.setText(f"Saldo: R$ {total:,.2f}")
 
-        # Pizza de despesas por categoria
-        dados = self.repo.soma_por_categoria(TipoTransacao.DESPESA)
+        # Rosca de despesas por categoria
+        dados = self.repo.soma_por_categoria_periodo(TipoTransacao.DESPESA, self._inicio, self._fim)
         pairs = [(d["categoria"], float(d["total"])) for d in dados]
-
-        # atualiza pizza
-        self.chart_pie.plot(pairs, title="")
 
         # atualiza barras (labels e valores)
         labels =[c for c, _ in pairs]
         values = [v for _, v in pairs]
-        self.chart_bars.plot(labels, values, title="")
+
+        # lista de cores consistente
+        colors = [self._color_for(cat) for cat in labels] if hasattr(self, "_color_for") else None
+
+        # atualiza gráficos com as MESMAS cores
+        self.chart_pie.plot(pairs, title="", colors=colors, show_legend=True)
+        self.chart_bars.plot(labels, values, title="", colors=colors)  
         
         
 
@@ -258,7 +339,7 @@ class MainWindow(QMainWindow):
                 t = dlg.get_transacao()
                 self.repo.adicionar(t)
                 self._recarregar()
-                
+
             except ValueError:
                 QMessageBox.warning(
                     self, "Entrada Inválida", "Verifique os dados informados."
@@ -282,3 +363,53 @@ class MainWindow(QMainWindow):
         # Salva estado do header da tabela
         self.settings.setValue("table/header_state", self.table.horizontalHeader().saveState())
         super().closeEvent(event)
+    
+    def _color_for(self, categoria: str):
+        if categoria not in self._cat_colors:
+            self._cat_colors[categoria] = self._palette[self._color_idx % len(self._palette)]
+            self._color_idx += 1
+        return self._cat_colors[categoria]
+
+    def _on_periodo_changed(self, idx: int):
+        # mostra/oculta o seletor de mês quando necessário
+        self.mes_ref.setVisible(self.combo_periodo.currentText().startswith("Mês"))
+        self._aplicar_filtro()
+
+    def _aplicar_filtro(self):
+        hoje = date.today()
+        escolha = self.combo_periodo.currentText()
+
+        if escolha == "Sempre":
+            self._inicio, self._fim = None, None
+
+        elif escolha.startswith("Mês"):
+            qd = self.mes_ref.date()
+            ano, mes = qd.year(), qd.month()
+            # 1º dia do mês
+            inicio = date(ano, mes, 1)
+            # último dia do mês:
+            if mes == 12:
+                fim = date(ano, 12, 31)
+            else:
+                fim = date(ano, mes + 1, 1) - timedelta(days=1)
+            self._inicio, self._fim = inicio, fim
+
+        elif escolha == "Últimos 12 meses":
+            # inclui o dia de hoje e volta 365 dias (simples e efetivo)
+            self._fim = hoje
+            self._inicio = hoje - timedelta(days=365)
+
+        self._recarregar()
+    
+    def _atualizar_titulo_charts(self):
+        if self._inicio and self._fim:
+            if self._inicio.day == 1 and (self._fim.month != self._inicio.month or self._fim.day >= 28):
+                # formato "Set/2025" quando for mês cheio
+                texto = self._inicio.strftime("%b/%Y").capitalize()
+            else:
+                texto = f"{self._inicio.strftime('%d/%m/%Y')} – {self._fim.strftime('%d/%m/%Y')}"
+        else:
+            texto = "Todos os tempos"
+
+        self.charts_title.setText(f"Gráficos por Categoria • {texto}")
+
