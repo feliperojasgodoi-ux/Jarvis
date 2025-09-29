@@ -38,7 +38,6 @@ class StartWindow(QMainWindow):
         super().__init__()
         self.repo = repo
         self.setWindowTitle("Início")
-        self.resize(900, 600)
         self.showMaximized()
 
         root = QWidget(); self.setCentralWidget(root)
@@ -93,7 +92,5 @@ class StartWindow(QMainWindow):
         self._fin_win.activateWindow()
 
     def _placeholder(self):
-        # no futuro, substitua pelo módulo real
-        from PyQt5.QtWidgets import QMessageBox
         QMessageBox.information(self, "Em desenvolvimento",
                                 "Módulo ainda em desenvolvimento.")
