@@ -41,7 +41,9 @@ class StartWindow(QMainWindow):
         self._fin_win = None  # manter referência da janela financeira
 
         self.setWindowTitle("Início")
-        self.showMaximized()
+        self.setMinimumSize(QSize(800, 600))
+    
+            # layout principal    
 
         root = QWidget()
         self.setCentralWidget(root)
@@ -76,7 +78,7 @@ class StartWindow(QMainWindow):
             return btn
 
         # --- Cards ---
-        self.card_fin = FinanceCard(self.repo)              # card com donut
+        self.card_fin = FinanceCard(self.repo)             # card com donut
         self.btn_dev1 = make_tile("EM\nDESENVOLVIMENTO")
         self.btn_dev2 = make_tile("EM\nDESENVOLVIMENTO")
 
@@ -136,7 +138,7 @@ class FinanceCard(QWidget):
 
         # donut compacto (sem legenda para caber no card)
         self.donut = DonutChartWidget([], title="")
-        self.donut.setMinimumHeight(220)
+        self.donut.setMinimumHeight(320)
 
         # rodapé
         self.footer = QLabel("")
@@ -155,12 +157,32 @@ class FinanceCard(QWidget):
         self.clicked.emit()
         super().mousePressEvent(ev)
 
-    # atualizar dados do donut (todos os tempos; você pode trocar para mês atual)
+    def _top_n_outros(self, pairs, n=5, nome_outros="Outros"):
+        if not pairs:
+            return pairs
+        pairs = sorted(pairs, key=lambda x: x[1], reverse=True)
+        top, resto = pairs[:n], pairs[n:]
+        if resto:
+            top.append((nome_outros, sum(v for _, v in resto)))
+        return top
+
     def refresh(self):
         dados = self.repo.soma_por_categoria(TipoTransacao.DESPESA)
         pairs = [(d["categoria"], float(d["total"])) for d in dados]
         total = sum(v for _, v in pairs)
 
-        # sem cores fixas aqui (o card é compacto); se quiser, injete seu mapa de cores
-        self.donut.plot(pairs, title="", colors=None, show_legend=False)
+        # Top 5 + “Outros”
+        pairs = self._top_n_outros(pairs, n=5)
+
+        # escala compacta pro card
+        self.donut.set_scale(min_px=10, max_px=16, k=0.045, sub_ratio=0.40)
+        # donut mais vazado e sem percentuais no card
+        self.donut.plot(
+            pairs, title="",
+            colors=None,            # pode deixar None no card
+            show_legend=False,
+            show_percent=False,
+            donut_width=0.50
+        )
+
         self.footer.setText(f"Total gasto: R$ {total:,.2f}")

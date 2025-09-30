@@ -1,11 +1,9 @@
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QFont
 import sys
-from app.ui.main_window import MainWindow
 from app.db import Database
 from app.repository import TransacaoRepository
 from app.ui.start_window import StartWindow
-from app.senha import Senha
 from app.ui.login_dialog import LoginDialog
 
 

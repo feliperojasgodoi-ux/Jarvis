@@ -46,109 +46,121 @@ class DonutChartWidget(QWidget):
         self.ax.set_facecolor("#121212")
         
         self._center_text = None
+        self._center_sub = None
+        self._scale = dict(min_px=12, max_px=24, k=0.6, sub_ratio=0.45)  # padrão
         self._resize_cid = None
+
+        
         
         self.plot(data_pairs or [], title)
 
+    def set_scale(self, *, min_px=None, max_px=None, k=None, sub_ratio=None):
+        if min_px is not None:  self._scale["min_px"] = min_px
+        if max_px is not None:  self._scale["max_px"] = max_px
+        if k is not None:       self._scale["k"] = k
+        if sub_ratio is not None: self._scale["sub_ratio"] = sub_ratio
+        self._fit_center_text()  # reaplica no tamanho atual
+
         # >>> novo: calcula fontsize proporcional ao tamanho do eixo
-    def _fit_center_text(self, min_px=12, max_px=40, k=0.12):
+    def _fit_center_text(self):
         if not self._center_text:
             return
-        # tamanho do eixo em pixels
         fig_w, fig_h = (self.figure.get_size_inches() * self.figure.dpi)
-        l, b, w, h = self.ax.get_position().bounds  # fração da figura
+        l, b, w, h = self.ax.get_position().bounds
         ax_w, ax_h = w * fig_w, h * fig_h
-        target = k * min(ax_w, ax_h)                # proporcional ao menor lado
-        fs = max(min_px, min(max_px, target))
+        min_px  = self._scale["min_px"]
+        max_px  = self._scale["max_px"]
+        k       = self._scale["k"]
+        sub_r   = self._scale["sub_ratio"]
+
+        fs = max(min_px, min(max_px, k * min(ax_w, ax_h)))
         self._center_text.set_fontsize(fs)
+        if self._center_sub:
+            self._center_sub.set_fontsize(max(min_px * 0.8, fs * sub_r))
+            self._center_sub.set_position((0, -0.12))
         self.canvas.draw_idle()
 
-    def plot(self, data_pairs, title, colors=None, show_legend=True, min_pct = 3.0):
+
+    def plot(self, data_pairs, title, colors=None, show_legend=True, show_percent=True, min_pct=3.0, donut_width=0.35):
         self.ax.clear()
         self.ax.set_facecolor("#121212")
 
         labels = [c for c, _ in data_pairs]
         sizes  = [float(v) for _, v in data_pairs]
         total  = sum(sizes)
-        
+
         if sizes:
-            # fonte específica para o texto central
+            # fonte (família) coerente com o app
             center_fp = FontProperties(family=mpl.rcParams["font.family"], weight="bold")
-             # DONUT: rosca com "width"
+
+            # DONUT: sem labels (nomes) – vamos usar somente legend + porcentagens com haste
             wedges, _ = self.ax.pie(
-                sizes,                            # rótulos fora
+                sizes,                        # <<< sem nomes ao redor
                 startangle=90,
                 colors=colors,
-                wedgeprops=dict(width=0.4, edgecolor="#121212"),
-                   
+                wedgeprops=dict(width=donut_width, edgecolor="#121212"),
+                textprops=dict(color="#e0e0e0"),
             )
 
-            # Texto central: total + subtítulo
-            self.ax.text(
-                0, 0,
-                f"{_fmt_brl_compacto(total)}",
-                ha="center", va="center",
-                color="#ffffff", fontproperties=center_fp, fontsize = 18
-            )
-            self.ax.text(
-                0, -0.12, 
-                "Total Gasto",
-                ha="center", va="center",
-                color="#e0e0e0",fontproperties=center_fp, fontsize=8
-            )
+            # Texto central (número + subtítulo) — sem fontsize fixo
+            txt_total = f"{_fmt_brl_compacto(total)}"
+            if self._center_text is None:
+                self._center_text = self.ax.text(
+                    0, 0, txt_total, ha="center", va="center",
+                    color="#ffffff", fontproperties=center_fp
+                )
+                self._center_sub = self.ax.text(
+                    0, -0.12, "Total Gasto", ha="center", va="center",
+                    color="#e0e0e0", fontproperties=center_fp
+                )
+                self._fit_center_text()  # tamanho inicial
+                if self._resize_cid is None:
+                    self._resize_cid = self.figure.canvas.mpl_connect(
+                        "resize_event", lambda event: self._fit_center_text()
+                    )
+            else:
+                self._center_text.set_text(txt_total)
+                self._fit_center_text()
+
+            # Porcentagens para fora com hastes (somente se >= min_pct)
             for i, w in enumerate(wedges):
                 pct = 100.0 * sizes[i] / total if total else 0.0
                 if pct < min_pct:
-                    continue  # pula as menores
-
-                # ângulo médio da fatia
+                    continue
                 ang = (w.theta2 + w.theta1) / 2.0
                 ang_rad = np.deg2rad(ang)
                 x, y = np.cos(ang_rad), np.sin(ang_rad)
-
-                # ponto na borda externa da rosca
-                r_outer = 1.0   # raio externo do pie
+                r_outer = 1.0
                 xy = (r_outer * x, r_outer * y)
-
-                # posição do texto (um pouco para fora)
                 OFFSET = 1.20
                 xytext = (OFFSET * np.sign(x), OFFSET * y)
-
-                # alinhamento do texto: esquerda/direita conforme lado
                 ha = "left" if x >= 0 else "right"
-
                 self.ax.annotate(
                     f"{pct:.1f}%",
                     xy=xy, xycoords="data",
                     xytext=xytext, textcoords="data",
                     ha=ha, va="center",
                     color="#e0e0e0", fontsize=11,
-                    arrowprops=dict(
-                        arrowstyle="-",
-                        color="#5f5e5e",
-                        lw=1.0,
-                        shrinkA=0, shrinkB=0,
-                          # curva leve
-                    ),
+                    arrowprops=dict(arrowstyle="-", color="#5f5e5e", lw=1.0,
+                                    shrinkA=0, shrinkB=0),
                 )
 
         self.ax.axis("equal")
         self.ax.set_title(title, color="#eaeaea", fontweight="bold", fontsize=16, pad=10)
 
-        # Legenda opcional (linhas, mesma ordem das fatias)
+        # Legenda (com nomes das categorias)
         if show_legend and labels:
-            self.ax.legend(
+            leg = self.ax.legend(
+                labels=labels,
                 loc="upper center", bbox_to_anchor=(0.5, -0.08),
                 ncol=min(5, len(labels)), frameon=False,
-                labels=labels
             )
-            # legenda clara no dark
-            for t in self.ax.get_legend().get_texts():
+            for t in leg.get_texts():
                 t.set_color("#eaeaea")
 
-        # margens iguais às do gráfico de barras para alinhamento
         self.figure.subplots_adjust(left=0.06, right=0.98, top=0.88, bottom=0.20)
         self.canvas.draw()
+
 
 class PieChartWidget(QWidget):
     def __init__(self, data_pairs, title: str = "", parent=None):
@@ -193,38 +205,6 @@ class PieChartWidget(QWidget):
         self.figure.subplots_adjust(left=0.06, right=0.98, top=0.90, bottom=0.15)
         self.canvas.draw()
 
-
-class BarChartWidget(QWidget):
-    def __init__(
-        self, meses, receitas, despesas, title: str = "Receitas x Despesas", parent=None
-    ):
-        super().__init__(parent)
-        self.figure = Figure(figsize=(5, 3))
-        self.figure.patch.set_facecolor("#121212")
-        self.canvas = FigureCanvas(self.figure)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.canvas)
-
-        self.ax = self.figure.add_subplot(111)
-        self.ax.set_facecolor("#121212")
-        self.ax.tick_params(colors="#eaeaea")
-        self.plot(meses, receitas, despesas, title)
-
-    def plot(self, meses, receitas, despesas, title):
-        # sempre usar self.ax (o mesmo eixo) para desenhar
-        self.ax.clear()
-        x = range(len(meses))
-        self.ax.bar(x, receitas, label="Receitas")
-        self.ax.bar(x, despesas, label="Despesas", alpha=0.6)
-        self.ax.set_xticks(list(x))
-        self.ax.set_xticklabels(meses, rotation=45, ha="right", color="#da2a2a")
-        self.ax.legend()
-        # título com cor aplicada diretamente eaeaea
-        self.ax.set_title(title)
-
-        self.figure.tight_layout()
-        self.canvas.draw()
-
 # app/charts.py (adicione abaixo do PieChartWidget)
 class CategoryBarChartWidget(QWidget):
     def __init__(self, labels=None, values=None, title="", parent=None):
@@ -248,6 +228,7 @@ class CategoryBarChartWidget(QWidget):
         self.ax.bar(list(x), values, color=colors)
 
         self.ax.set_xticks(list(x))
+        self.ax.margins(x=0.02)
         self.ax.set_xticklabels(labels, rotation=45, ha="right", color="white")
 
         self.ax.tick_params(colors="white")
@@ -255,5 +236,5 @@ class CategoryBarChartWidget(QWidget):
             spine.set_color("#eaeaea")
 
         self.ax.set_title(title, color="#eaeaea", fontweight="bold", fontsize=14, pad=10)
-        self.figure.subplots_adjust(left = 0.06, right = 0.98, top = 0.90, bottom = 0.15)
+        self.figure.subplots_adjust(left = 0.08, right = 0.98, top = 0.88, bottom = 0.28)
         self.canvas.draw()
