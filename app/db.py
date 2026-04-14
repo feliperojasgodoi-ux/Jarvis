@@ -14,6 +14,11 @@ data TEXT NOT NULL,
 banco TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_transacoes_data ON transacoes(data);
+CREATE INDEX IF NOT EXISTS idx_transacoes_tipo ON transacoes(tipo);
+CREATE INDEX IF NOT EXISTS idx_transacoes_categoria ON transacoes(categoria);
+CREATE INDEX IF NOT EXISTS idx_transacoes_tipo_categoria
+    ON transacoes(tipo, categoria);
+CREATE INDEX IF NOT EXISTS idx_transacoes_banco ON transacoes(banco);
 """
 
 
