@@ -65,7 +65,7 @@ class StartWindow(QMainWindow):
         title.setFont(f)
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(TITLE_QSS)
-        title.setMinimumSize(QSize(400, 260))
+        title.setMinimumSize(QSize(300, 120))
 
         # helper para cards placeholder
         def make_tile(text: str) -> QPushButton:
@@ -138,7 +138,7 @@ class FinanceCard(QWidget):
 
         # donut compacto (sem legenda para caber no card)
         self.donut = DonutChartWidget([], title="")
-        self.donut.setMinimumHeight(320)
+        self.donut.setMinimumHeight(180)
 
         # rodapé
         self.footer = QLabel("")

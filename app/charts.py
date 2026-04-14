@@ -123,27 +123,28 @@ class DonutChartWidget(QWidget):
                 self._fit_center_text()
 
             # Porcentagens para fora com hastes (somente se >= min_pct)
-            for i, w in enumerate(wedges):
-                pct = 100.0 * sizes[i] / total if total else 0.0
-                if pct < min_pct:
-                    continue
-                ang = (w.theta2 + w.theta1) / 2.0
-                ang_rad = np.deg2rad(ang)
-                x, y = np.cos(ang_rad), np.sin(ang_rad)
-                r_outer = 1.0
-                xy = (r_outer * x, r_outer * y)
-                OFFSET = 1.20
-                xytext = (OFFSET * np.sign(x), OFFSET * y)
-                ha = "left" if x >= 0 else "right"
-                self.ax.annotate(
-                    f"{pct:.1f}%",
-                    xy=xy, xycoords="data",
-                    xytext=xytext, textcoords="data",
-                    ha=ha, va="center",
-                    color="#e0e0e0", fontsize=11,
-                    arrowprops=dict(arrowstyle="-", color="#5f5e5e", lw=1.0,
-                                    shrinkA=0, shrinkB=0),
-                )
+            if show_percent:
+                for i, w in enumerate(wedges):
+                    pct = 100.0 * sizes[i] / total if total else 0.0
+                    if pct < min_pct:
+                        continue
+                    ang = (w.theta2 + w.theta1) / 2.0
+                    ang_rad = np.deg2rad(ang)
+                    x, y = np.cos(ang_rad), np.sin(ang_rad)
+                    r_outer = 1.0
+                    xy = (r_outer * x, r_outer * y)
+                    OFFSET = 1.20
+                    xytext = (OFFSET * np.sign(x), OFFSET * y)
+                    ha = "left" if x >= 0 else "right"
+                    self.ax.annotate(
+                        f"{pct:.1f}%",
+                        xy=xy, xycoords="data",
+                        xytext=xytext, textcoords="data",
+                        ha=ha, va="center",
+                        color="#e0e0e0", fontsize=11,
+                        arrowprops=dict(arrowstyle="-", color="#5f5e5e", lw=1.0,
+                                        shrinkA=0, shrinkB=0),
+                    )
 
         self.ax.axis("equal")
         self.ax.set_title(title, color="#eaeaea", fontweight="bold", fontsize=16, pad=10)
