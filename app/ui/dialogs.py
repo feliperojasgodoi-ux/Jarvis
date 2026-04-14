@@ -62,6 +62,8 @@ class TransacaoDialog(QDialog):
             raise ValueError("Categoria vazia.")
         if not self.descricao.text().strip():
             raise ValueError("Descrição vazia.")
+        if not self.banco.text().strip():
+            raise ValueError("Banco vazio.")
         if not self.valor.text().strip():
             raise ValueError("Valor vazio.")
 
