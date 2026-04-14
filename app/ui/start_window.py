@@ -82,7 +82,7 @@ class StartWindow(QMainWindow):
         self.btn_dev1 = make_tile("EM\nDESENVOLVIMENTO")
         self.btn_dev2 = make_tile("EM\nDESENVOLVIMENTO")
 
-        grid.addWidget(title,         0, 1)
+        grid.addWidget(title,         0, 0, 1, 3)
         grid.addWidget(self.card_fin, 1, 1)
         grid.addWidget(self.btn_dev1, 1, 0)
         grid.addWidget(self.btn_dev2, 1, 2)
@@ -176,12 +176,12 @@ class FinanceCard(QWidget):
 
         # escala compacta pro card
         self.donut.set_scale(min_px=10, max_px=16, k=0.045, sub_ratio=0.40)
-        # donut mais vazado e sem percentuais no card
+        # donut mais vazado e com percentuais no card
         self.donut.plot(
             pairs, title="",
             colors=None,            # pode deixar None no card
             show_legend=False,
-            show_percent=False,
+            show_percent=True,
             donut_width=0.50
         )
 
