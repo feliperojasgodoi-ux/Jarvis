@@ -176,7 +176,7 @@ class FinanceCard(QWidget):
 
         # escala compacta pro card
         self.donut.set_scale(min_px=10, max_px=16, k=0.045, sub_ratio=0.40)
-        # donut mais vazado e sem percentuais no card
+        # donut mais vazado e com percentuais no card
         self.donut.plot(
             pairs, title="",
             colors=None,            # pode deixar None no card
