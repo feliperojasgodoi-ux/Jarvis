@@ -11,3 +11,6 @@ venv/
 dist/
 build/
 *.spec
+
+# Database files — may contain sensitive financial data
+*.db

@@ -42,8 +42,8 @@ class StartWindow(QMainWindow):
 
         self.setWindowTitle("Início")
         self.setMinimumSize(QSize(800, 600))
-    
-            # layout principal    
+
+        # layout principal
 
         root = QWidget()
         self.setCentralWidget(root)
@@ -61,7 +61,9 @@ class StartWindow(QMainWindow):
 
         # --- Título JARVIS (apenas visual) ---
         title = QLabel("J.A.R.V.I.S.")
-        f = QFont(); f.setPointSize(56); f.setBold(True)
+        f = QFont()
+        f.setPointSize(56)
+        f.setBold(True)
         title.setFont(f)
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(TITLE_QSS)
@@ -73,7 +75,9 @@ class StartWindow(QMainWindow):
             btn.setMinimumSize(QSize(120, 70))
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             btn.setStyleSheet(TILE_QSS)
-            bf = QFont(); bf.setPointSize(14); bf.setBold(True)
+            bf = QFont()
+            bf.setPointSize(14)
+            bf.setBold(True)
             btn.setFont(bf)
             return btn
 
@@ -82,7 +86,7 @@ class StartWindow(QMainWindow):
         self.btn_dev1 = make_tile("EM\nDESENVOLVIMENTO")
         self.btn_dev2 = make_tile("EM\nDESENVOLVIMENTO")
 
-        grid.addWidget(title,         0, 1)
+        grid.addWidget(title, 0, 1)
         grid.addWidget(self.card_fin, 1, 1)
         grid.addWidget(self.btn_dev1, 1, 0)
         grid.addWidget(self.btn_dev2, 1, 2)
@@ -111,7 +115,8 @@ class StartWindow(QMainWindow):
 
 
 class FinanceCard(QWidget):
-    """Card com título + donut e rodapé. Clicável para abrir o módulo financeiro."""
+    """Card clicável para abrir o módulo financeiro."""
+
     clicked = pyqtSignal()
 
     def __init__(self, repo: TransacaoRepository, parent=None):
@@ -131,7 +136,9 @@ class FinanceCard(QWidget):
 
         # título
         self.title = QLabel("Controle Financeiro")
-        tf = QFont(); tf.setPointSize(16); tf.setBold(True)
+        tf = QFont()
+        tf.setPointSize(16)
+        tf.setBold(True)
         self.title.setFont(tf)
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setStyleSheet("color:#eaeaea; padding: 8px 0;")

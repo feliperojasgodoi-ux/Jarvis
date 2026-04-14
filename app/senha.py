@@ -1,13 +1,17 @@
-from PyQt5.QtWidgets import QApplication, QLineEdit, QDialog, QVBoxLayout, QPushButton, QLabel
+from PyQt5.QtWidgets import (
+    QLineEdit, QDialog, QVBoxLayout, QPushButton, QLabel,
+)
+from app.security import verify_password, is_password_configured
+
 
 class Senha(QDialog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Password Protection")
         self.setFixedSize(300, 150)
 
         self.layout = QVBoxLayout()
-        
+
         self.label = QLabel("Enter Password:")
         self.layout.addWidget(self.label)
 
@@ -21,10 +25,14 @@ class Senha(QDialog):
 
         self.setLayout(self.layout)
 
+        if not is_password_configured():
+            self.label.setText(
+                "JARVIS_PASSWORD_HASH not set. See README."
+            )
+
     def check_password(self):
-        predefined_password = "Tonto2402"
-        if self.senha_input.text() == predefined_password:
-            self.accept()  # Close the dialog and return success
+        if verify_password(self.senha_input.text()):
+            self.accept()
         else:
             self.label.setText("Incorrect Password. Try Again.")
 
