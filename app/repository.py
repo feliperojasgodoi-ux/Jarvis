@@ -11,12 +11,17 @@ class TransacaoRepository:
     # CRUD básico
     def adicionar(self, t: Transacao) -> int:
         sql = (
-            "INSERT INTO transacoes(tipo, categoria, descricao, valor, data, banco)\n"
-            "VALUES (?,?,?,?,?,?)"
-        )
+            "INSERT INTO transacoes"
+            "(tipo, categoria, descricao, valor, data, banco)\n"
+            "VALUES (?,?,?,?,?,?)")
         return self.db.execute(
             sql,
-            (t.tipo.value, t.categoria, t.descricao, t.valor, t.data.isoformat(), t.banco),
+            (t.tipo.value,
+             t.categoria,
+             t.descricao,
+             t.valor,
+             t.data.isoformat(),
+             t.banco),
         )
 
     def listar(self) -> List[Transacao]:
@@ -30,7 +35,9 @@ class TransacaoRepository:
 
     def por_intervalo(self, inicio: date, fim: date) -> List[Transacao]:
         rows = self.db.query(
-            "SELECT * FROM transacoes WHERE date(data) BETWEEN date(?) AND date(?) ORDER BY date(data)",
+            "SELECT * FROM transacoes "
+            "WHERE date(data) BETWEEN date(?) AND date(?) "
+            "ORDER BY date(data)",
             (inicio.isoformat(), fim.isoformat()),
         )
         return [self._row_to_model(r) for r in rows]
@@ -47,12 +54,12 @@ class TransacaoRepository:
             "SELECT strftime('%Y-%m', data) AS mes, "
             "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE 0 END) AS receitas, "
             "SUM(CASE WHEN tipo='DESPESA' THEN valor ELSE 0 END) AS despesas, "
-            "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE -valor END) AS saldo "
-            "FROM transacoes GROUP BY mes ORDER BY mes"
-        )
+            "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE -valor END) "
+            "AS saldo "
+            "FROM transacoes GROUP BY mes ORDER BY mes")
         return self.db.query(sql)
-    
-    def listar_por_periodo(self,inicio: Optional[date], fim: Optional[date]):
+
+    def listar_por_periodo(self, inicio: Optional[date], fim: Optional[date]):
         if inicio and fim:
             rows = self.db.query(
                 "SELECT * FROM transacoes "
@@ -62,35 +69,39 @@ class TransacaoRepository:
             )
         else:
             rows = self.db.query(
-            "SELECT * FROM transacoes ORDER BY date(data) DESC, id DESC"
-        )
+                "SELECT * FROM transacoes ORDER BY date(data) DESC, id DESC"
+            )
         return [self._row_to_model(r) for r in rows]
-    
-    
-    def soma_por_categoria_periodo(self, tipo: TipoTransacao, inicio: Optional[date], fim: Optional[date]) -> List[dict]:
+
+    def soma_por_categoria_periodo(
+            self,
+            tipo: TipoTransacao,
+            inicio: Optional[date],
+            fim: Optional[date]) -> List[dict]:
         if inicio and fim:
             sql = (
                 "SELECT categoria, SUM(valor) as total FROM transacoes "
                 "WHERE tipo=? AND date(data) BETWEEN date(?) AND date(?) "
                 "GROUP BY categoria ORDER BY total DESC"
             )
-            return self.db.query(sql, (tipo.value, inicio.isoformat(), fim.isoformat()))
+            return self.db.query(
+                sql, (tipo.value, inicio.isoformat(), fim.isoformat()))
         else:
             return self.soma_por_categoria(tipo)
-            
+
     def saldo_mensal_periodo(self, inicio: date, fim: date):
         sql = (
             "SELECT strftime('%Y-%m', data) AS mes, "
             "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE 0 END) AS receitas, "
             "SUM(CASE WHEN tipo='DESPESA' THEN valor ELSE 0 END) AS despesas, "
-            "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE -valor END) AS saldo "
+            "SUM(CASE WHEN tipo='RECEITA' THEN valor ELSE -valor END) "
+            "AS saldo "
             "FROM transacoes "
             "WHERE date(data) BETWEEN date(?) AND date(?) "
-            "GROUP BY mes ORDER BY mes"
-        )
+            "GROUP BY mes ORDER BY mes")
         return self.db.query(sql, (inicio.isoformat(), fim.isoformat()))
-    
-    def listar_filtrado(self, inicio = None, fim = None, categoria = None):
+
+    def listar_filtrado(self, inicio=None, fim=None, categoria=None):
         base = "SELECT * FROM transacoes WHERE 1=1"
         params = []
         if (inicio is not None) and (fim is not None):
@@ -102,7 +113,7 @@ class TransacaoRepository:
         base += " ORDER BY date(data) DESC, id DESC"
         rows = self.db.query(base, params)
         return [self._row_to_model(r) for r in rows]
-    
+
     @staticmethod
     def _row_to_model(r: dict) -> Transacao:
         return Transacao(
@@ -112,5 +123,6 @@ class TransacaoRepository:
             descricao=r["descricao"],
             valor=float(r["valor"]),
             data=date.fromisoformat(r["data"]),
-            banco=r["banco"],  # corrigido: usar 'bank' (nome da coluna no schema)
+            banco=r["banco"],
+            # corrigido: usar 'bank' (nome da coluna no schema)
         )

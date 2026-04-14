@@ -74,32 +74,39 @@ def beautify_calendar(cal: QCalendarWidget):
     cal.setGridVisible(False)
 
     # Formatos de texto
-    base = QTextCharFormat(); base.setForeground(Qt.white)
+    base = QTextCharFormat()
+    base.setForeground(Qt.white)
     for wd in (Qt.Monday, Qt.Tuesday, Qt.Wednesday, Qt.Thursday, Qt.Friday):
         cal.setWeekdayTextFormat(wd, base)
 
-    we = QTextCharFormat(); we.setForeground(Qt.red)  # finais de semana
+    we = QTextCharFormat()
+    we.setForeground(Qt.red)  # finais de semana
     cal.setWeekdayTextFormat(Qt.Saturday, we)
     cal.setWeekdayTextFormat(Qt.Sunday, we)
 
     # “Hoje” em negrito (o anel bonito vem no delegate opcional abaixo)
-    today_fmt = QTextCharFormat(); today_fmt.setFontWeight(QFont.Bold)
+    today_fmt = QTextCharFormat()
+    today_fmt.setFontWeight(QFont.Bold)
     cal.setDateTextFormat(QDate.currentDate(), today_fmt)
 
     # Deixa os botões prev/next com setas
     prev_btn = cal.findChild(QToolButton, "qt_calendar_prevmonth")
     next_btn = cal.findChild(QToolButton, "qt_calendar_nextmonth")
     if prev_btn and next_btn:
-        prev_btn.setText("❮"); next_btn.setText("❯")
-        prev_btn.setIconSize(prev_btn.size()); next_btn.setIconSize(next_btn.size())
+        prev_btn.setText("❮")
+        next_btn.setText("❯")
+        prev_btn.setIconSize(prev_btn.size())
+        next_btn.setIconSize(next_btn.size())
+
 
 class TodayRingDelegate(QStyledItemDelegate):
     """Desenha um anel discreto na célula de 'hoje'."""
+
     def paint(self, painter: QPainter, option, index):
         super().paint(painter, option, index)  # pinta padrão do Qt
         # data desta célula
         model = index.model()
-        date = model.index(index.row(), index.column()).data(Qt.UserRole)
+        model.index(index.row(), index.column()).data(Qt.UserRole)
         # o QCalendarWidget não fornece direto; usamos o texto + mês visível
         text = index.data()
         if not text or not text.isdigit():
@@ -107,15 +114,19 @@ class TodayRingDelegate(QStyledItemDelegate):
         # heurística: “hoje” = número do dia e mês do calendário
         cal = index.model().parent()  # QTableView -> QCalendarWidget
         if hasattr(cal, "parentWidget"):
-            cw = cal.parentWidget()
+            cal.parentWidget()  # noqa: F841
         # com segurança:
         current = QDate.currentDate()
-        nav = cal.parent().parent() if hasattr(cal, "parent") else None
+        if hasattr(cal, "parent"):
+            _nav = cal.parent().parent()  # noqa: F841
 
         # se a célula é o dia de hoje (mês/ano visíveis)
-        monthShown = cal.monthShown() if hasattr(cal, "monthShown") else current.month()
-        yearShown  = cal.yearShown()  if hasattr(cal, "yearShown")  else current.year()
-        if int(text) == current.day() and monthShown == current.month() and yearShown == current.year():
+        monthShown = cal.monthShown() if hasattr(
+            cal, "monthShown") else current.month()
+        yearShown = cal.yearShown() if hasattr(
+            cal, "yearShown") else current.year()
+        if int(text) == current.day() and monthShown == current.month(
+        ) and yearShown == current.year():
             r = option.rect.adjusted(4, 4, -4, -4)
             painter.save()
             pen = QPen(QColor("#eaeaea"))

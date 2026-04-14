@@ -13,7 +13,7 @@ def main():
     QWidget {
         background-color: #121212;
         color: #e0e0e0;
-        
+
     }
     """
 
@@ -32,6 +32,7 @@ def main():
         sys.exit(app.exec_())
     else:
         sys.exit()
+
 
 if __name__ == "__main__":
     main()

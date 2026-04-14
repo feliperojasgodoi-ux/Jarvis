@@ -1,12 +1,15 @@
 import matplotlib as mpl
 from matplotlib.font_manager import FontProperties
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+)
 from matplotlib.figure import Figure
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtGui import QFont
 import numpy as np
 
-# Preferir a fonte do Qt (no Windows costuma ser Segoe UI). Se não der, usa DejaVu Sans.
+# Preferir a fonte do Qt (no Windows costuma ser Segoe UI). Se não der,
+# usa DejaVu Sans.
 try:
     qt_font = QFont()
     mpl.rcParams["font.family"] = qt_font.family()
@@ -23,42 +26,55 @@ mpl.rcParams.update({
     "ytick.labelsize": 9,
 })
 
+
 def _fmt_brl_compacto(v: float) -> str:
     # R$ 8,3 mil | R$ 1,2 mi | R$ 3,4 bi ...
     abs_v = abs(v)
     if abs_v >= 1_000_000_000:
-        return f"R$ {v/1_000_000_000:.1f} bi"
+        return f"R$ {v / 1_000_000_000:.1f} bi"
     if abs_v >= 1_000_000:
-        return f"R$ {v/1_000_000:.1f} mi"
+        return f"R$ {v / 1_000_000:.1f} mi"
     if abs_v >= 1_000:
-        return f"R$ {v/1_000:.1f} mil"
+        return f"R$ {v / 1_000:.1f} mil"
     return f"R$ {v:,.0f}".replace(",", ".")  # 1.234
 
+
 class DonutChartWidget(QWidget):
-    def __init__(self, data_pairs=None, title="Gastos por Categoria", parent=None):
+    def __init__(
+            self,
+            data_pairs=None,
+            title="Gastos por Categoria",
+            parent=None):
         super().__init__(parent)
         self.figure = Figure(figsize=(4, 3))
         self.canvas = FigureCanvas(self.figure)
-        layout = QVBoxLayout(self); layout.addWidget(self.canvas)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.canvas)
 
         self.ax = self.figure.add_subplot(111)
         self.figure.patch.set_facecolor("#121212")
         self.ax.set_facecolor("#121212")
-        
+
         self._center_text = None
         self._center_sub = None
-        self._scale = dict(min_px=12, max_px=24, k=0.6, sub_ratio=0.45)  # padrão
+        self._scale = dict(
+            min_px=12,
+            max_px=24,
+            k=0.6,
+            sub_ratio=0.45)  # padrão
         self._resize_cid = None
 
-        
-        
         self.plot(data_pairs or [], title)
 
     def set_scale(self, *, min_px=None, max_px=None, k=None, sub_ratio=None):
-        if min_px is not None:  self._scale["min_px"] = min_px
-        if max_px is not None:  self._scale["max_px"] = max_px
-        if k is not None:       self._scale["k"] = k
-        if sub_ratio is not None: self._scale["sub_ratio"] = sub_ratio
+        if min_px is not None:
+            self._scale["min_px"] = min_px
+        if max_px is not None:
+            self._scale["max_px"] = max_px
+        if k is not None:
+            self._scale["k"] = k
+        if sub_ratio is not None:
+            self._scale["sub_ratio"] = sub_ratio
         self._fit_center_text()  # reaplica no tamanho atual
 
         # >>> novo: calcula fontsize proporcional ao tamanho do eixo
@@ -68,10 +84,10 @@ class DonutChartWidget(QWidget):
         fig_w, fig_h = (self.figure.get_size_inches() * self.figure.dpi)
         l, b, w, h = self.ax.get_position().bounds
         ax_w, ax_h = w * fig_w, h * fig_h
-        min_px  = self._scale["min_px"]
-        max_px  = self._scale["max_px"]
-        k       = self._scale["k"]
-        sub_r   = self._scale["sub_ratio"]
+        min_px = self._scale["min_px"]
+        max_px = self._scale["max_px"]
+        k = self._scale["k"]
+        sub_r = self._scale["sub_ratio"]
 
         fs = max(min_px, min(max_px, k * min(ax_w, ax_h)))
         self._center_text.set_fontsize(fs)
@@ -80,20 +96,29 @@ class DonutChartWidget(QWidget):
             self._center_sub.set_position((0, -0.12))
         self.canvas.draw_idle()
 
-
-    def plot(self, data_pairs, title, colors=None, show_legend=True, show_percent=True, min_pct=3.0, donut_width=0.35):
+    def plot(
+            self,
+            data_pairs,
+            title,
+            colors=None,
+            show_legend=True,
+            show_percent=True,
+            min_pct=3.0,
+            donut_width=0.35):
         self.ax.clear()
         self.ax.set_facecolor("#121212")
 
         labels = [c for c, _ in data_pairs]
-        sizes  = [float(v) for _, v in data_pairs]
-        total  = sum(sizes)
+        sizes = [float(v) for _, v in data_pairs]
+        total = sum(sizes)
 
         if sizes:
             # fonte (família) coerente com o app
-            center_fp = FontProperties(family=mpl.rcParams["font.family"], weight="bold")
+            center_fp = FontProperties(
+                family=mpl.rcParams["font.family"], weight="bold")
 
-            # DONUT: sem labels (nomes) – vamos usar somente legend + porcentagens com haste
+            # DONUT: sem labels (nomes) – vamos usar somente legend +
+            # porcentagens com haste
             wedges, _ = self.ax.pie(
                 sizes,                        # <<< sem nomes ao redor
                 startangle=90,
@@ -146,7 +171,12 @@ class DonutChartWidget(QWidget):
                 )
 
         self.ax.axis("equal")
-        self.ax.set_title(title, color="#eaeaea", fontweight="bold", fontsize=16, pad=10)
+        self.ax.set_title(
+            title,
+            color="#eaeaea",
+            fontweight="bold",
+            fontsize=16,
+            pad=10)
 
         # Legenda (com nomes das categorias)
         if show_legend and labels:
@@ -158,7 +188,8 @@ class DonutChartWidget(QWidget):
             for t in leg.get_texts():
                 t.set_color("#eaeaea")
 
-        self.figure.subplots_adjust(left=0.06, right=0.98, top=0.88, bottom=0.20)
+        self.figure.subplots_adjust(
+            left=0.06, right=0.98, top=0.88, bottom=0.20)
         self.canvas.draw()
 
 
@@ -172,7 +203,8 @@ class PieChartWidget(QWidget):
 
         self.figure.patch.set_facecolor("#121212")
         self.ax = self.figure.add_subplot(111)
-        self.figure.subplots_adjust(left = 0.06, right = 0.98, top = 0.90, bottom = 0.15)
+        self.figure.subplots_adjust(
+            left=0.06, right=0.98, top=0.90, bottom=0.15)
         self.ax.set_facecolor("#121212")
         self.plot(data_pairs, title)
 
@@ -185,7 +217,7 @@ class PieChartWidget(QWidget):
         if sizes:
             wedges, texts, autotexts = self.ax.pie(
                 sizes,
-                labels=(labels if show_labels else[]),
+                labels=(labels if show_labels else []),
                 autopct="%1.1f%%",
                 textprops={"color": "white"},
                 startangle=90,
@@ -199,13 +231,21 @@ class PieChartWidget(QWidget):
 
         self.ax.axis("equal")
         # título com cor explícita para override do rcParams
-        self.ax.set_title(title, color="#eaeaea", fontsize=14, fontweight="bold", pad=10)
+        self.ax.set_title(
+            title,
+            color="#eaeaea",
+            fontsize=14,
+            fontweight="bold",
+            pad=10)
         # opcional: esconder eixos (não remove o título)
         self.ax.set_axis_off()
-        self.figure.subplots_adjust(left=0.06, right=0.98, top=0.90, bottom=0.15)
+        self.figure.subplots_adjust(
+            left=0.06, right=0.98, top=0.90, bottom=0.15)
         self.canvas.draw()
 
 # app/charts.py (adicione abaixo do PieChartWidget)
+
+
 class CategoryBarChartWidget(QWidget):
     def __init__(self, labels=None, values=None, title="", parent=None):
         super().__init__(parent)
@@ -220,7 +260,7 @@ class CategoryBarChartWidget(QWidget):
         self.ax.set_facecolor("#121212")
         self.plot(labels or [], values or [], title)
 
-    def plot(self, labels, values, title, colors = None):
+    def plot(self, labels, values, title, colors=None):
         self.ax.clear()
         self.ax.set_facecolor("#121212")
 
@@ -235,6 +275,12 @@ class CategoryBarChartWidget(QWidget):
         for spine in self.ax.spines.values():
             spine.set_color("#eaeaea")
 
-        self.ax.set_title(title, color="#eaeaea", fontweight="bold", fontsize=14, pad=10)
-        self.figure.subplots_adjust(left = 0.08, right = 0.98, top = 0.88, bottom = 0.28)
+        self.ax.set_title(
+            title,
+            color="#eaeaea",
+            fontweight="bold",
+            fontsize=14,
+            pad=10)
+        self.figure.subplots_adjust(
+            left=0.08, right=0.98, top=0.88, bottom=0.28)
         self.canvas.draw()

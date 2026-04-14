@@ -11,6 +11,7 @@ from PyQt5.QtGui import QDoubleValidator
 from datetime import date
 from ..models import Transacao, TipoTransacao, Categorias
 
+
 class TransacaoDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -23,9 +24,11 @@ class TransacaoDialog(QDialog):
 
         # Categoria como seleção
         self.categoria = QComboBox()
-        self.categoria.setEditable(True)              # permite digitar se precisar
+        # permite digitar se precisar
+        self.categoria.setEditable(True)
         self.categoria.addItems(Categorias.Categorias_PADRAO)
-        self.categoria.setInsertPolicy(QComboBox.NoInsert)  # não cria item novo ao Enter
+        self.categoria.setInsertPolicy(
+            QComboBox.NoInsert)  # não cria item novo ao Enter
         self.categoria.setCurrentText("Alimentação")  # default simpático
 
         self.descricao = QLineEdit()
@@ -51,7 +54,8 @@ class TransacaoDialog(QDialog):
         layout.addRow("Valor:", self.valor)
         layout.addRow("Data:", self.data)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
